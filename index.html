@@ -1,11 +1,225 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <style>
+        canvas {
+            border: 1px solid #d3d3d3;
+            background-color: #f1f1f1;
+            position: relative;
+        }
+        .res{
+            position: absolute;
+            top: 22%;
+            left: 42%;
+        }
+    </style>
 </head>
-<body>
-    
+
+<body onload="startGame()">
+    <h1>Test canvas</h1>
+    <button id="reset" class="res" style="display: none;">Restart</button>
+    <h1 id="score">score:0</h1>
+    <script>
+        let myGamePiece
+        let myObstacle
+        let currentScore = 0
+        function startGame() {
+            myGameArea.start()
+            myGamePiece = new component(30, 30, "red", 10, 120, myGameArea.canvas.width, myGameArea.canvas.height, true)
+            myObstacle = new component(10, 100, "green", 200, myGameArea.canvas.height - 100, myGameArea.canvas.width, myGameArea.canvas.height, false)
+           
+            myScore1 = new score(200+5,0, myGameArea.canvas.height)
+            myObstacle2 = new component(10, 100, "green", 200, 0, myGameArea.canvas.width, myGameArea.canvas.height, true)
+            myScore2 = new score(400+5,0, myGameArea.canvas.height)
+            myObstacle3 = new component(10, 100, "green", 400, myGameArea.canvas.height - 100, myGameArea.canvas.width, myGameArea.canvas.height, false)
+            myObstacle4 = new component(10, 75, "green", 400, 0, myGameArea.canvas.width, myGameArea.canvas.height, true)
+        }
+
+        const myGameArea = {
+            canvas: document.createElement("canvas"),
+            start: function () {
+                this.canvas.width = 480;
+                this.canvas.height = 270;
+                this.canvas.style.cursor = "none"
+                this.context = this.canvas.getContext("2d")
+                document.body.insertBefore(this.canvas, document.body.childNodes[2])
+                this.interval = setInterval(UpdateGameArea, 10)
+                window.addEventListener('keydown', (e) => {
+                    myGameArea.key = e.keyCode
+                })
+                window.addEventListener('keyup', () => {
+                    myGameArea.key = false
+                })
+                window.addEventListener('mousemove', (e) => {
+                    myGameArea.x = e.pageX
+                    console.log(e.pageX,e.pageY)
+                    myGameArea.y = e.pageY
+                    // myGamePiece.x = e.pageX
+                    // myGamePiece.y = e.pageY
+                })
+                window.addEventListener('touchmove', (e) => {
+                    myGamePiece.x = e.touches[0].screenX
+                    myGamePiece.y = e.touches[0].screenY
+                })
+            },
+            clear: function () {
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height)
+            },
+            stop: function () {
+                clearInterval(this.interval)
+                const btn = document.getElementById("reset")
+                btn.style.display = "block"
+                this.canvas.style.cursor = "pointer"
+                btn.addEventListener("click",(e)=>{
+                    location.reload()
+                   
+                })
+            }
+        }
+        let crash
+        function component(width, height, color, x, y, canvasWidth, canvasHeight, isReverse,isScore = false) {
+            this.width = width
+            this.height = height
+            this.speedX = 0
+            this.speedY = 0
+            this.score = isScore
+            this.x = x
+            this.y = y
+            ctx = myGameArea.context
+            ctx.fillStyle = color
+            ctx.fillRect(this.x, this.y, this.width, this.height)
+            this.update = function () {
+                ctx = myGameArea.context
+                ctx.fillStyle = color
+                ctx.fillRect(this.x, this.y, this.width, this.height)
+            }
+            this.newPos = function () {
+                this.x += this.speedX
+                this.y += this.speedY
+            }
+            this.crashWith = function (obj) {
+                let myleft = this.x
+                let myright = this.x + this.width
+                let mytop = this.y
+                let mybot = this.y + this.height
+                let othertop = obj.y
+                let otherbottom = obj.y + obj.height
+                let otherleft = obj.x
+                let otherright = obj.x + obj.width
+                // console.log(myleft, myright, mytop, mybot, ":this pos")
+                // console.log(otherleft, otherright, othertop, otherbottom, ":other pos")
+                crash = true
+                if ((mybot < othertop) || (mytop > otherbottom) || (myleft > otherright) || (myright < otherleft)) {
+                    crash = false
+                }
+                return crash
+            }
+            this.move = function () {
+                this.x -= 1
+                if (this.x < 0) {
+                    this.score = true
+                    this.x = 500
+                    this.height = getRandomInt(120)
+                    if (isReverse) {
+                        this.y = 0
+                    
+                    } else {
+                        this.y = canvasHeight - this.height
+                    }
+                }
+            }
+           
+        }
+        function score(posX,posY,screenHeight){
+            this.x = posX
+            this.y = posY
+            this.height = screenHeight
+            this.width = 1
+            ctx = myGameArea.context
+            ctx.fillStyle = "transparent"
+            ctx.fillRect(this.x, this.y, this.width, this.height)
+            this.update = function () {
+                ctx = myGameArea.context
+                ctx.fillStyle = "transparent"
+                ctx.fillRect(this.x, this.y, this.width, this.height)
+            }
+            this.move = function () {
+                this.x -= 1
+               
+                if (this.x < 0) {
+                    this.y = 0
+                    this.x = 500
+                }
+            }
+        
+        }
+        function getRandomInt(max) {
+            return Math.floor(Math.random() * max);
+        }
+        function scoreAdd(){
+            const scoreElement = document.getElementById("score")
+            scoreElement.innerHTML = `score:${currentScore}`
+        }
+        function UpdateGameArea(screenX, screenX, width, height) {
+            if (myGamePiece.crashWith(myObstacle) || myGamePiece.crashWith(myObstacle2) || myGamePiece.crashWith(myObstacle3) || myGamePiece.crashWith(myObstacle4)) {
+                myGameArea.stop()
+            } else {
+                if(myGamePiece.crashWith(myScore1) ){
+                    myScore1.y = -500
+                    currentScore++
+                }
+                if(myGamePiece.crashWith(myScore2)){
+                    myScore2.y = -500
+                    currentScore++
+                }
+                scoreAdd()
+                myGameArea.clear()
+                myObstacle.update()
+                myObstacle2.update()
+                myObstacle.move()
+                myObstacle2.move()
+                myObstacle3.move()
+                myObstacle4.move()
+                myObstacle3.update()
+                myObstacle4.update()
+                myScore1.update()
+                myScore1.move()
+                myScore2.update()
+                myScore2.move()
+                if (myGameArea.x && myGameArea.y) {
+                    myGamePiece.x = myGameArea.x
+                    myGamePiece.y = myGameArea.y
+                }
+                myGamePiece.newPos()
+                myGamePiece.update()
+            }
+        }
+        function moveup() {
+            myGamePiece.speedY -= 1
+        }
+        function movedown() {
+            myGamePiece.speedY += 1
+        }
+        function moveleft() {
+            myGamePiece.speedX -= 1
+        }
+        function moveright() {
+            myGamePiece.speedX += 1
+        }
+        function stop() {
+            myGamePiece.speedX = myGamePiece.speedY = 0
+        }
+    </script>
+    <button onclick="moveup()">Up</button>
+    <button onclick="movedown()">Down</button>
+    <button onclick="moveleft()">Left</button>
+    <button onclick="moveright()">Right</button>
+    <button onclick="stop()">stop</button>
+
 </body>
+
 </html>
